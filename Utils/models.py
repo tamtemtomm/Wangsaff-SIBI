@@ -1,5 +1,4 @@
 import tensorflow as tf
-import torch
 from torch import nn
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -80,3 +79,4 @@ SIBIModelKeras = tf.keras.models.Sequential([
     # 512 neuron hidden layer
     tf.keras.layers.Dense(512, activation='relu'),
     tf.keras.layers.Dense(26, activation='softmax')])
+
