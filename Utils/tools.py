@@ -1,32 +1,30 @@
+import os, time
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 import torch
+import tensorflow as tf
 import mediapipe as mp
 import cv2
+from models import SIBIModelTorch
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-imgtest = 'Utils/test.jpg'
-
-def read_img(im_path):
-  im = cv2.imread(im_path)
+def exctract_feature(im):
+  if isinstance(im, str):
+    assert os.path.isfile(im), f"Filepath Error: {im} file cannot be found" 
+    im = cv2.imread(im)
+    
   im_height, im_width, _ = im.shape
 
   mp_hands = mp.solutions.hands
-  mp_drawing = mp.solutions.drawing_utils
   with mp_hands.Hands(static_image_mode=True, max_num_hands=2, min_detection_confidence=0.1) as hands:
     while True:
       results = hands.process(cv2.flip(cv2.cvtColor(im, cv2.COLOR_BGR2RGB), 1))
 
       if not results.multi_hand_landmarks:
-        return (0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0)
+        return None, None
 
-      annotated_im = cv2.flip(im.copy(), 1)
+      annot = []
       for hand_landmarks in results.multi_hand_landmarks:
+        annot.append(hand_landmarks)
       # pgelang Hand /  Pergelangan Tangan
         pgelangX = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x * im_width
         pgelangY = hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].y * im_height
@@ -117,8 +115,6 @@ def read_img(im_path):
         kelingking_TipY = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP].y * im_height
         kelingking_TipZ = hand_landmarks.landmark[mp_hands.HandLandmark.PINKY_TIP].z
 
-        mp_drawing.draw_landmarks(annotated_im, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
         return (np.array([pgelangX, pgelangY, pgelangZ,
                         jempol_CmcX, jempol_CmcY, jempol_CmcZ,
                         jempol_McpX, jempol_McpY, jempol_McpZ,
@@ -140,23 +136,91 @@ def read_img(im_path):
                         kelingking_PipX, kelingking_PipY, kelingking_PipZ,
                         kelingking_DipX, kelingking_DipY, kelingking_DipZ,
                         kelingking_TipX, kelingking_TipY, kelingking_TipZ
-                        ]).reshape(-1, 1)), np.array(annotated_im)
+                        ]).reshape(-1, 1)), annot
 
 def torch_output(features, model):
-    scaler = MinMaxScaler()
-    features = scaler.fit_transform(features)
     features = torch.tensor(features, dtype=torch.float32)
     features = features.squeeze(dim=1).unsqueeze(dim=0).unsqueeze(dim=0)
     
-    out = model(features)
+    out = model(features.to(device))
     pred = chr(torch.argmax(out, dim=1).item() + 65)
     return pred
 
 def keras_output(features, model):
-    scaler = MinMaxScaler()
-    features = scaler.fit_transform(features)
     features = features.reshape(1, -1, 1)
     
-    predictions = model.predict(features)
-    pred = chr(np.argmax(predictions, axis=1)[0] + 65)
+    prediction = model.predict(features)
+    pred = chr(np.argmax(prediction, axis=1)[0] + 65)
     return pred
+
+def torch_load_model(model, model_path:str):
+    model.load_state_dict(torch.load(model_path, map_location={'cuda:0': 'cpu'}))
+    return model
+
+def keras_load_model(model_path:str):
+    return tf.keras.models.load_model(model_path)
+  
+def read_video(model_path:str):
+  
+  timer = 0
+  mp_drawing = mp.solutions.drawing_utils
+  mp_hands = mp.solutions.hands
+  
+  if model_path[-3:] == '.h5':
+      model = keras_load_model(model_path)
+      mode = 'keras'
+  elif model_path[-4:] == '.pth':
+    model = torch_load_model(SIBIModelTorch(26).to(device), model_path)
+    mode = 'torch'
+    
+  cap = cv2.VideoCapture(0)
+  width, height = 720, 480
+  cap.set(3, width)
+  cap.set(4, height)    
+  
+  while True:
+    times = time.time()
+    
+    _, frame = cap.read()
+    features, annot = exctract_feature(frame)
+    
+    if (features is not None):
+      if mode == 'keras':
+        pred = keras_output(features, model)
+      elif mode == 'torch':
+        pred = torch_output(features, model)
+        
+    else : 
+      pred = "Tidak ada hasil"
+    
+    print(pred)
+    
+    has = cv2.flip(frame,1)
+    if(annot):
+        for tang_l in annot:
+            kord = tang_l.landmark
+            yMax = float(str(max(kord, key= lambda lm: lm.y)).split('\n')[1].split(" ")[1]) * height
+            xMax = float(str(max(kord, key= lambda lm: lm.x)).split('\n')[0].split(" ")[1]) * width
+            yMin = float(str(min(kord, key= lambda lm: lm.y)).split('\n')[1].split(" ")[1]) * height
+            xMin = float(str(min(kord, key= lambda lm: lm.x)).split('\n')[0].split(" ")[1]) * width
+            print(yMax)
+            mp_drawing.draw_landmarks(
+                has,
+                tang_l,
+                mp_hands.HAND_CONNECTIONS)
+            
+    xMax, yMax, xMin, yMin = [0,0,0,0]
+    fps = 1/(times-timer)
+    
+    cv2.putText(has, f'FPS: {float(fps):.2f}', (20,30), cv2.FONT_HERSHEY_DUPLEX, 0.5,(255,255,255), 1, cv2.LINE_AA)
+    cv2.rectangle(has, (int(xMin)-40, int(yMin)-20), (int(xMax)-30, int(yMax)+10), (255,0,0), 4)
+    cv2.rectangle(has, (int(xMin)-40, int(yMin)-50), (int(xMax)-30, int(yMin)-20),(255,0,0), -1)
+    cv2.putText(has, f'Huruf: {pred if (features is not None and features[3][0] != 0 and features[39][0] !=0) else "Tidak diketahui"}', (int(xMin)-20,int(yMin)-30), cv2.FONT_HERSHEY_DUPLEX, 0.5,(255,255,255), 1, cv2.LINE_AA)
+    cv2.imshow("hasil", has)
+    
+    timer = times
+    if(cv2.waitKey(1) == ord("q")):
+        cv2.destroyAllWindows()
+        break
+
+read_video('./models/SIBIModelTorch.pth')
