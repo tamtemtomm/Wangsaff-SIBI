@@ -159,14 +159,21 @@ def torch_load_model(model, model_path:str):
 
 def keras_load_model(model_path:str):
     return tf.keras.models.load_model(model_path)
+    mp_drawing = mp.solutions.drawing_utils
+    mp_hands = mp.solutions.hands
+    
+    if model_path[-3:] == '.h5':
+        model = keras_load_model(model_path)
+        mode = 'keras'
+    elif model_path[-4:] == '.pth':
+      model = torch_load_model(SIBIModelTorch(26).to(device), model_path)
+      mode = 'torch'
   
-def read_video(model_path:str):
-  
-  preds = []
-  
-  timer = 0
+def extract_video(frame, model_path:str,  width=720, height=480):
   mp_drawing = mp.solutions.drawing_utils
   mp_hands = mp.solutions.hands
+  
+  features, annot = exctract_feature(frame)
   
   if model_path[-3:] == '.h5':
       model = keras_load_model(model_path)
@@ -174,57 +181,90 @@ def read_video(model_path:str):
   elif model_path[-4:] == '.pth':
     model = torch_load_model(SIBIModelTorch(26).to(device), model_path)
     mode = 'torch'
-    
-  cap = cv2.VideoCapture(0)
-  width, height = 720, 480
-  cap.set(3, width)
-  cap.set(4, height)    
   
+  if (features is not None):
+    if mode == 'keras':
+      pred = keras_output(features, model)
+    elif mode == 'torch':
+      pred = torch_output(features, model)
+      
+  else : 
+    pred = "Tidak ada hasil"
+  
+  xMax, yMax, xMin, yMin = [0,0,0,0]
+  has = cv2.flip(frame,1)
+  if(annot):
+      for tang_l in annot:
+          kord = tang_l.landmark
+          yMax = float(str(max(kord, key= lambda lm: lm.y)).split('\n')[1].split(" ")[1]) * height
+          xMax = float(str(max(kord, key= lambda lm: lm.x)).split('\n')[0].split(" ")[1]) * width
+          yMin = float(str(min(kord, key= lambda lm: lm.y)).split('\n')[1].split(" ")[1]) * height
+          xMin = float(str(min(kord, key= lambda lm: lm.x)).split('\n')[0].split(" ")[1]) * width
+          mp_drawing.draw_landmarks(
+              has,
+              tang_l,
+              mp_hands.HAND_CONNECTIONS)
+  
+  cv2.rectangle(has, (int(xMin)-40, int(yMin)-20), (int(xMax)-30, int(yMax)+10), (255,0,0), 4)
+  cv2.rectangle(has, (int(xMin)-40, int(yMin)-50), (int(xMax)-30, int(yMin)-20),(255,0,0), -1)
+  cv2.putText(has, f'Huruf: {pred if (features is not None and features[3][0] != 0 and features[39][0] !=0) else "Tidak diketahui"}', (int(xMin)-20,int(yMin)-30), cv2.FONT_HERSHEY_DUPLEX, 0.5,(255,255,255), 1, cv2.LINE_AA)
+  
+  return pred, has
+            
+
+def read_video(model_path:str, input_video=None, output_video=None, show=True):
+  
+  assert os.path.isfile(model_path), f"File Error : {model_path} cannot be found"
+  
+  preds = []
+  timer = 0
+  
+  
+  if input_video is not None:
+    cap = cv2.VideoCapture(input_video)
+    _, frame = cap.read()
+    width, height = frame.shape[1], frame.shape[0]
+    
+    fourcc = cv2.VideoWriter_fourcc(*'MP4V') 
+    
+    if output_video is not None:
+      output = cv2.VideoWriter(output_video,
+                               fourcc,
+                               12,
+                               (width, height))
+  else : 
+    width, height = 720, 480
+    cap = cv2.VideoCapture(0)
+    cap.set(3, width)
+    cap.set(4, height)    
+ 
   while True:
     times = time.time()
     
-    _, frame = cap.read()
-    features, annot = exctract_feature(frame)
-    
-    if (features is not None):
-      if mode == 'keras':
-        pred = keras_output(features, model)
-      elif mode == 'torch':
-        pred = torch_output(features, model)
-        
-    else : 
-      pred = "Tidak ada hasil"
-    
+    ret, frame = cap.read()
+    pred, has = extract_video(frame, model_path, width, height)
+
     print(pred)
     preds.append(pred)
-    
-    has = cv2.flip(frame,1)
-    if(annot):
-        for tang_l in annot:
-            kord = tang_l.landmark
-            yMax = float(str(max(kord, key= lambda lm: lm.y)).split('\n')[1].split(" ")[1]) * height
-            xMax = float(str(max(kord, key= lambda lm: lm.x)).split('\n')[0].split(" ")[1]) * width
-            yMin = float(str(min(kord, key= lambda lm: lm.y)).split('\n')[1].split(" ")[1]) * height
-            xMin = float(str(min(kord, key= lambda lm: lm.x)).split('\n')[0].split(" ")[1]) * width
-            print(yMax)
-            mp_drawing.draw_landmarks(
-                has,
-                tang_l,
-                mp_hands.HAND_CONNECTIONS)
             
-    xMax, yMax, xMin, yMin = [0,0,0,0]
     fps = 1/(times-timer)
     
     cv2.putText(has, f'FPS: {float(fps):.2f}', (20,30), cv2.FONT_HERSHEY_DUPLEX, 0.5,(255,255,255), 1, cv2.LINE_AA)
-    cv2.rectangle(has, (int(xMin)-40, int(yMin)-20), (int(xMax)-30, int(yMax)+10), (255,0,0), 4)
-    cv2.rectangle(has, (int(xMin)-40, int(yMin)-50), (int(xMax)-30, int(yMin)-20),(255,0,0), -1)
-    cv2.putText(has, f'Huruf: {pred if (features is not None and features[3][0] != 0 and features[39][0] !=0) else "Tidak diketahui"}', (int(xMin)-20,int(yMin)-30), cv2.FONT_HERSHEY_DUPLEX, 0.5,(255,255,255), 1, cv2.LINE_AA)
-    cv2.imshow("hasil", has)
     
-    timer = times
-    if(cv2.waitKey(1) == ord("q")):
-        cv2.destroyAllWindows()
+    if output_video is not None:
+      if ret :
+        output.write(has)
+      else : 
+        output.release()
         break
+      
+    if show : 
+      cv2.imshow("hasil", has)
+      timer = times
+      if(cv2.waitKey(1) == ord("q")):
+          cv2.destroyAllWindows()
+          if output_video : output.release()
+          break
   
   return preds
 
@@ -241,14 +281,14 @@ def translate_preds(preds):
     
     if pred == "Tidak ada hasil" : 
       word_freq[pred] += 1
-      if prev == pred and word_freq[pred] >= 2 and translate_pred[-1] != " ": 
+      if prev == pred and word_freq[pred] >= 7 and translate_pred[-1] != " ": 
         translate_pred.append(" ")
         
     else :
       word_freq[pred] += 1
-      if prev==pred and word_freq[pred] >= 2 and translate_pred[-1] != pred:
+      if prev==pred and word_freq[pred] >= 7 and translate_pred[-1] != pred:
         translate_pred.append(pred)
-      
+    
     prev = pred
     
   return ''.join(translate_pred).lstrip()
