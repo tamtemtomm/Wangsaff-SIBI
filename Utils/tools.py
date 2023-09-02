@@ -4,7 +4,7 @@ import torch
 import tensorflow as tf
 import mediapipe as mp
 import cv2
-from models import SIBIModelTorch
+from Utils.models import SIBIModelTorch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def exctract_feature(im):
@@ -162,6 +162,8 @@ def keras_load_model(model_path:str):
   
 def read_video(model_path:str):
   
+  preds = []
+  
   timer = 0
   mp_drawing = mp.solutions.drawing_utils
   mp_hands = mp.solutions.hands
@@ -194,6 +196,7 @@ def read_video(model_path:str):
       pred = "Tidak ada hasil"
     
     print(pred)
+    preds.append(pred)
     
     has = cv2.flip(frame,1)
     if(annot):
@@ -222,5 +225,30 @@ def read_video(model_path:str):
     if(cv2.waitKey(1) == ord("q")):
         cv2.destroyAllWindows()
         break
+  
+  return preds
 
-read_video('./models/SIBIModelTorch.pth')
+def translate_preds(preds):
+  translate_pred = [" "]
+  word_freq = {chr(i+65):0 for i in range(26)}
+  word_freq["Tidak ada hasil"] = 0
+  prev = "Tidak ada hasil"
+  
+  for pred in preds:
+    
+    if pred != prev:
+      word_freq[prev] = 0
+    
+    if pred == "Tidak ada hasil" : 
+      word_freq[pred] += 1
+      if prev == pred and word_freq[pred] >= 2 and translate_pred[-1] != " ": 
+        translate_pred.append(" ")
+        
+    else :
+      word_freq[pred] += 1
+      if prev==pred and word_freq[pred] >= 2 and translate_pred[-1] != pred:
+        translate_pred.append(pred)
+      
+    prev = pred
+    
+  return ''.join(translate_pred).lstrip()
