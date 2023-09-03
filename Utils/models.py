@@ -18,7 +18,7 @@ class SIBIConv(nn.Module):
         nn.MaxPool1d(pooling_size)
     )
 
-  def __call__(self, x):
+  def forward(self, x):
     return self.conv(x)
 
 class SIBILinear(nn.Module):
@@ -31,7 +31,7 @@ class SIBILinear(nn.Module):
         nn.Dropout(dropout),
     )
 
-  def __call__(self, x):
+  def forward(self, x):
     return self.linear(x)
 
 class SIBIModelTorch(nn.Module):
@@ -53,7 +53,7 @@ class SIBIModelTorch(nn.Module):
         nn.Softmax()
     )
 
-  def __call__(self, x):
+  def forward(self, x):
     x = self.conv(x)
     x = self.dropout(x)
     x = self.flatten(x)
