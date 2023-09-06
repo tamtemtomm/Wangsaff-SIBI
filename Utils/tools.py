@@ -1,4 +1,5 @@
-import os, time
+import os, time, re
+from collections import Counter
 import numpy as np
 import torch
 import tensorflow as tf
@@ -6,6 +7,8 @@ import mediapipe as mp
 import cv2
 from Utils.models import SIBIModelTorch
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+from Utils.correction import Correction, load_bow
 
 def exctract_feature(im, confidence_extraction=0.1):
   if isinstance(im, str):
@@ -270,7 +273,10 @@ def read_video(model_path:str,
   print("Process Selesai")
   return preds
 
-def translate_preds(preds) -> str:
+def translate_preds(preds, BOW_PATH) -> str:
+  WORDS = load_bow(BOW_PATH)
+
+  
   translate_pred = [" "]
   word_freq = {chr(i+65):0 for i in range(26)}
   word_freq["Tidak ada hasil"] = 0
@@ -292,5 +298,10 @@ def translate_preds(preds) -> str:
         translate_pred.append(pred)
     
     prev = pred
+  
+  translate_pred = ''.join(translate_pred).lstrip().lower()
+  
+  correction = Correction(WORDS)
+  translate_pred = [correction(word) for word in translate_pred.split()]
     
-  return ''.join(translate_pred).lstrip().lower()
+  return ' '.join(translate_pred)
