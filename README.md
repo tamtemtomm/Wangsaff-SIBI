@@ -57,7 +57,9 @@ You can costumize the parameter according to the table below </br>
 |  Model  |  Notebook  |
 |  ---------- | ------- |
 |  SIBITorchv2 |  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yzXkvgT_XLaJKFXyoEk8weG-mdEFrFH-?usp=sharing) | 
-|  SIBIKeras |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1OeRZ8_D83PloU22k80pWyQtTZqGvkl1M?usp=sharing) | 
+|  SIBIKerasv2 |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1OeRZ8_D83PloU22k80pWyQtTZqGvkl1M?usp=sharing) | 
+|  BISINDOTorch |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1ZvTUmu5z8hV7OlD92GXttS9p2E_AOnzZ?usp=sharing) |
+|  BISINDOKeras |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1FqA4aAbalxNp7LX4ytiQgjBacMEAzcms?usp=sharing) |
 
 ### Word Correction Mechanism
 
