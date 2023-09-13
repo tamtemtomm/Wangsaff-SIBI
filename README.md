@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="logo.png" width=50% alt="Wangsaff-SIBI Logo">
+</p>
+<br> <br>
+
 # Wangsaff-SIBI
 Wangsaff SIBI is a sign language video translator experiment. This repo initially started as a fun project to fill my holiday.
 Currently we are working on Indonesian Based Sign Languange (SIBI). This project is on development stage.
@@ -48,6 +53,16 @@ You can costumize the parameter according to the table below </br>
 ## Documentation
 
 ### Gesture Detection Training Stage
+
+|  Model  |  Notebook  |
+|  ---------- | ------- |
+|  SIBITorchv2 |  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1yzXkvgT_XLaJKFXyoEk8weG-mdEFrFH-?usp=sharing) | 
+|  SIBIKeras |   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1OeRZ8_D83PloU22k80pWyQtTZqGvkl1M?usp=sharing) | 
+
 ### Word Correction Mechanism
+
+|  Model  |  Notebook  |
+|  ---------- | ------- |
+|  Indonesian Spell Corrector |  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1XParLEVWZnmHXFsB8u3alkMPTqnan24F?usp=sharing) | 
 
 ## Known issues (On Development!)
