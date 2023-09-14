@@ -2,3 +2,5 @@ tensorflow==2.11.0
 torch==1.13.1
 mediapipe==0.10.1
 torchvision==0.14.1
+opencv-python==4.7.0.68
+tk==0.1.0
