@@ -1,0 +1,6 @@
+tensorflow==2.11.0
+torch==2.1.2
+mediapipe==0.10.1
+torchvision==0.14.1
+opencv-python==4.7.0.68
+customtkinter==5.2.1

@@ -1,0 +1,7 @@
+/__pycache__
+/Utils/*.txt
+!/Utils/BOW.txt
+
+/models
+test.py
+./test.py
