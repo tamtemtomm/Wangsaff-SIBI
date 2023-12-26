@@ -1,4 +1,4 @@
-import tensorflow as tf
+# import tensorflow as tf
 from torch import nn
 import torch.nn.functional as F
 import torchvision.transforms as T
@@ -50,7 +50,7 @@ class SIBIModelTorch(nn.Module):
     self.linear = nn.Sequential(
         SIBILinear(768, 512),
         nn.Linear(512, num_class),
-        nn.Softmax()
+        nn.Softmax(dim=1)
     )
 
   def forward(self, x):
@@ -60,23 +60,23 @@ class SIBIModelTorch(nn.Module):
     x = self.linear(x)
     return x
 
-SIBIModelKeras = tf.keras.models.Sequential([
-    tf.keras.layers.Conv1D(filters=32, kernel_size=5, strides=1, padding="causal", activation="relu", input_shape=(63, 1)),
-    tf.keras.layers.Conv1D(filters=32, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.MaxPooling1D(pool_size=2),
-    tf.keras.layers.Conv1D(filters=64, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.Conv1D(filters=64, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.MaxPooling1D(pool_size=2),
-    tf.keras.layers.Conv1D(filters=128, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.Conv1D(filters=128, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.MaxPooling1D(pool_size=2),
-    tf.keras.layers.Conv1D(filters=256, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.Conv1D(filters=256, kernel_size=5, strides=1, padding="causal", activation="relu"),
-    tf.keras.layers.MaxPooling1D(pool_size=2),
-    tf.keras.layers.Dropout(rate=0.2),
-    # Flatten the results to feed into a DNN
-    tf.keras.layers.Flatten(),
-    # 512 neuron hidden layer
-    tf.keras.layers.Dense(512, activation='relu'),
-    tf.keras.layers.Dense(26, activation='softmax')])
+# SIBIModelKeras = tf.keras.models.Sequential([
+#     tf.keras.layers.Conv1D(filters=32, kernel_size=5, strides=1, padding="causal", activation="relu", input_shape=(63, 1)),
+#     tf.keras.layers.Conv1D(filters=32, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.MaxPooling1D(pool_size=2),
+#     tf.keras.layers.Conv1D(filters=64, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.Conv1D(filters=64, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.MaxPooling1D(pool_size=2),
+#     tf.keras.layers.Conv1D(filters=128, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.Conv1D(filters=128, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.MaxPooling1D(pool_size=2),
+#     tf.keras.layers.Conv1D(filters=256, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.Conv1D(filters=256, kernel_size=5, strides=1, padding="causal", activation="relu"),
+#     tf.keras.layers.MaxPooling1D(pool_size=2),
+#     tf.keras.layers.Dropout(rate=0.2),
+#     # Flatten the results to feed into a DNN
+#     tf.keras.layers.Flatten(),
+#     # 512 neuron hidden layer
+#     tf.keras.layers.Dense(512, activation='relu'),
+#     tf.keras.layers.Dense(26, activation='softmax')])
 
