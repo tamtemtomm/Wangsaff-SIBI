@@ -6,6 +6,7 @@ import tensorflow as tf
 import mediapipe as mp
 import cv2
 from models import SIBIModelTorch
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 from Utils.correction import Correction, load_bow
@@ -161,7 +162,7 @@ def keras_output(features, model):
   return pred
 
 def torch_load_model(model, model_path:str):
-  model.load_state_dict(torch.load(model_path, map_location={'cuda:0': 'cpu'}))
+  model.load_state_dict(torch.load(model_path))
   return model
 
 def keras_load_model(model_path:str):
@@ -177,7 +178,7 @@ def extract_video(frame, model_path:str,
   
   features, annot = exctract_feature(frame,
                                      confidence_extraction=confidence_extraction,
-                                     confidence_tracking=confidence_tracking)
+                                     confidence_tracking=confidence_tracking) 
   
   if model_path[-3:] == '.h5':
       model = keras_load_model(model_path)
